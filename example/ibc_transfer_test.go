@@ -9,23 +9,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	address  string
-	denom    string
-	grpcAddr string
-)
-
 func TestIBCTransfer(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	ctx := context.Background()
 
-	address = "dym139mq752delxv78jvtmwxhasyrycufsvrw4aka9"
-	denom = "adym"
-	grpcAddr = "0.0.0.0:8090"
-	amount, err := cosmos.GetBalance(ctx, address, denom, grpcAddr)
+	dymensionUser := cosmos.User{
+		Address: "dym139mq752delxv78jvtmwxhasyrycufsvrw4aka9",
+		Denom:   "adym",
+	}
+	rollappUser := cosmos.User{
+		Address: "ethm1q5f3a8acs5yenfrxu9v49p49rn7gcy0nd94ruk",
+		Denom:   "arax",
+	}
+
+	dymensionGrpcAddr := "0.0.0.0:8090"
+	rollappGrpcAddr := "0.0.0.0:9090"
+
+	dymensionOrigBal, err := cosmos.GetBalance(ctx, dymensionUser.Address, dymensionUser.Denom, dymensionGrpcAddr)
 	require.NoError(t, err)
-	fmt.Println(amount)
-	fmt.Println(err)
+	fmt.Println(dymensionOrigBal)
+
+	rollappOrigBal, err := cosmos.GetBalance(ctx, rollappUser.Address, rollappUser.Denom, rollappGrpcAddr)
+	require.NoError(t, err)
+	fmt.Println(rollappOrigBal)
+
 }
