@@ -88,7 +88,6 @@ func SendIBCTransfer(
 		"--chain-id", srcChain.ChainID,
 		"--gas", "auto",
 		"--gas-adjustment", "1.5",
-		"--packet-timeout-timestamp", "86400000000000",
 		"--from", keyName,
 		"--keyring-backend", keyring.BackendTest,
 		"--output", "json",
