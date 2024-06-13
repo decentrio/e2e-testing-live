@@ -180,7 +180,7 @@ func (c *CosmosChain) KeyBech32(name string) (string, error) {
 }
 
 // Acknowledgements implements ibc.Chain, returning all acknowledgments in block at height
-func (c *CosmosChain) Acknowledgements(ctx context.Context, interfaceRegistry codectypes.InterfaceRegistry, height uint64) ([]ibc.PacketAcknowledgement, error) {
+func (c CosmosChain) Acknowledgements(ctx context.Context, interfaceRegistry codectypes.InterfaceRegistry, height uint64) ([]ibc.PacketAcknowledgement, error) {
 	var acks []*chanTypes.MsgAcknowledgement
 
 	err := rangeBlockMessages(ctx, interfaceRegistry, c.Client, height, func(msg types.Msg) bool {
