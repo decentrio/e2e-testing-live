@@ -6,6 +6,11 @@ import (
 	"github.com/decentrio/e2e-testing-live/cosmos"
 )
 
+// ChainHeighter fetches the current chain block height.
+type ChainHeighter interface {
+	Height(ctx context.Context) (uint64, error)
+}
+
 // WaitForBlocks blocks until all chains reach a block height delta equal to or greater than the delta argument.
 // If a ChainHeighter does not monotonically increase the height, this function may block program execution indefinitely.
 func WaitForBlocks(ctx context.Context, delta int, chain cosmos.CosmosChain) error {
