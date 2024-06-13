@@ -111,7 +111,7 @@ func SendIBCTransfer(
 	fmt.Println(string(output))
 }
 
-func (c *CosmosChain) Height(ctx context.Context) (uint64, error) {
+func (c CosmosChain) Height(ctx context.Context) (uint64, error) {
 	res, err := c.Client.Status(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("tendermint rpc client status: %w", err)
