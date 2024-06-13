@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os/exec"
 	"time"
+	"encoding/json"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -52,7 +53,7 @@ func SendIBCTransfer(
 	toWallet ibc.WalletData,
 	fees string,
 	options ibc.TransferOptions,
-) {
+) (*types.TxResponse, error){
 	command := []string{
 		"ibc-transfer", "transfer", "transfer", channelID,
 		toWallet.Address, fmt.Sprintf("%s%s", toWallet.Amount.String(), toWallet.Denom),
@@ -104,11 +105,16 @@ func SendIBCTransfer(
 	output, err := cmd.Output()
 	if err != nil {
 		fmt.Println("Error executing command:", err)
-		return
+		return nil, err
 	}
 
-	// Print the output
-	fmt.Println(string(output))
+	txResponse := types.TxResponse{}
+	err = json.Unmarshal(output, &txResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &txResponse, nil
 }
 
 func (c CosmosChain) Height(ctx context.Context) (uint64, error) {
