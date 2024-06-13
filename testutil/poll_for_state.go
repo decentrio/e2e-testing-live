@@ -9,6 +9,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/decentrio/rollup-e2e-testing/ibc"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -54,18 +55,18 @@ func (p BlockPoller[T]) DoPoll(ctx context.Context, startHeight, maxHeight uint6
 // ChainAcker is a chain that can get its acknowledgements at a specified height
 type ChainAcker interface {
 	ChainHeighter
-	Acknowledgements(ctx context.Context, height uint64) ([]ibc.PacketAcknowledgement, error)
+	Acknowledgements(ctx context.Context, interfaceRegistry codectypes.InterfaceRegistry, height uint64) ([]ibc.PacketAcknowledgement, error)
 }
 
 // PollForAck attempts to find an acknowledgement containing a packet equal to the packet argument.
 // Polling starts at startHeight and continues until maxHeight. It is safe to call this function even if
 // the chain has yet to produce blocks for the target min/max height range. Polling delays until heights exist
 // on the chain. Returns an error if acknowledgement not found or problems getting height or acknowledgements.
-func PollForAck(ctx context.Context, chain ChainAcker, startHeight, maxHeight uint64, packet ibc.Packet) (ibc.PacketAcknowledgement, error) {
+func PollForAck(ctx context.Context, chain ChainAcker, interfaceRegistry codectypes.InterfaceRegistry, startHeight, maxHeight uint64, packet ibc.Packet) (ibc.PacketAcknowledgement, error) {
 	var zero ibc.PacketAcknowledgement
 	pollError := &packetPollError{targetPacket: packet}
 	poll := func(ctx context.Context, height uint64) (ibc.PacketAcknowledgement, error) {
-		acks, err := chain.Acknowledgements(ctx, height)
+		acks, err := chain.Acknowledgements(ctx, interfaceRegistry, height)
 		if err != nil {
 			return zero, err
 		}

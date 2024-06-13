@@ -7,7 +7,10 @@ import (
 	"os/exec"
 	"time"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/types"
+	chanTypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
 	"github.com/decentrio/rollup-e2e-testing/ibc"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
@@ -174,4 +177,38 @@ func (c *CosmosChain) KeyBech32(name string) (string, error) {
 	fmt.Println(string(output))
 
 	return string(bytes.TrimSuffix(output, []byte("\n"))), nil
+}
+
+// Acknowledgements implements ibc.Chain, returning all acknowledgments in block at height
+func (c *CosmosChain) Acknowledgements(ctx context.Context, interfaceRegistry codectypes.InterfaceRegistry, height uint64) ([]ibc.PacketAcknowledgement, error) {
+	var acks []*chanTypes.MsgAcknowledgement
+
+	err := rangeBlockMessages(ctx, interfaceRegistry, c.Client, height, func(msg types.Msg) bool {
+		found, ok := msg.(*chanTypes.MsgAcknowledgement)
+		if ok {
+			acks = append(acks, found)
+		}
+		return false
+	})
+	if err != nil {
+		return nil, fmt.Errorf("find acknowledgements at height %d: %w", height, err)
+	}
+	ibcAcks := make([]ibc.PacketAcknowledgement, len(acks))
+	for i, ack := range acks {
+		ack := ack
+		ibcAcks[i] = ibc.PacketAcknowledgement{
+			Acknowledgement: ack.Acknowledgement,
+			Packet: ibc.Packet{
+				Sequence:         ack.Packet.Sequence,
+				SourcePort:       ack.Packet.SourcePort,
+				SourceChannel:    ack.Packet.SourceChannel,
+				DestPort:         ack.Packet.DestinationPort,
+				DestChannel:      ack.Packet.DestinationChannel,
+				Data:             ack.Packet.Data,
+				TimeoutHeight:    ack.Packet.TimeoutHeight.String(),
+				TimeoutTimestamp: ibc.Nanoseconds(ack.Packet.TimeoutTimestamp),
+			},
+		}
+	}
+	return ibcAcks, nil
 }
