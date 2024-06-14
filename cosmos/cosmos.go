@@ -123,6 +123,46 @@ func SendIBCTransfer(
 	return &txResponse, nil
 }
 
+// TODO: refactor this to dym_hub
+func FullfillDemandOrder(
+	dymHub *CosmosChain,
+	orderId string,
+	keyName string,
+	fees string,
+	options ibc.TransferOptions,
+) (error) {
+	command := []string{
+		"eibc", "fulfill-order", orderId,
+		"--fees", fees, "--node", "https://" + dymHub.GrpcAddr,
+	}
+
+	command = append([]string{"tx"}, command...)
+
+	command = append(command,
+		"--chain-id", dymHub.ChainID,
+		"--gas", "auto",
+		"--gas-adjustment", "1.5",
+		"--from", keyName,
+		"--keyring-backend", keyring.BackendTest,
+		"--output", "json",
+		"--broadcast-mode", "block",
+		"-y")
+
+	// Create the command
+	cmd := exec.Command(dymHub.Bin, command...)
+	fmt.Println(cmd)
+	// Run the command and get the output
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("Error executing command:", err)
+		return err
+	}
+
+	println(string(output))
+
+	return nil
+}
+
 func GetIbcTxFromTxResponse(txResp types.TxResponse) (tx ibc.Tx, _ error) {
 	tx.Height = uint64(txResp.Height)
 	tx.TxHash = txResp.TxHash
