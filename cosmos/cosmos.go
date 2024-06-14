@@ -129,7 +129,7 @@ func FullfillDemandOrder(
 	orderId string,
 	keyName string,
 	fees string,
-) (error) {
+) (string, error) {
 	command := []string{
 		"eibc", "fulfill-order", orderId,
 		"--fees", fees, "--node", "https://" + dymHub.GrpcAddr,
@@ -154,12 +154,16 @@ func FullfillDemandOrder(
 	output, err := cmd.Output()
 	if err != nil {
 		fmt.Println("Error executing command:", err)
-		return err
+		return "", err
 	}
 
-	println(string(output))
+	txResponse := types.TxResponse{}
+	err = json.Unmarshal(output, &txResponse)
+	if err != nil {
+		return "", err
+	}
 
-	return nil
+	return txResponse.TxHash, nil
 }
 
 func GetIbcTxFromTxResponse(txResp types.TxResponse) (tx ibc.Tx, _ error) {
