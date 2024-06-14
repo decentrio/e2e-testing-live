@@ -129,7 +129,6 @@ func FullfillDemandOrder(
 	orderId string,
 	keyName string,
 	fees string,
-	options ibc.TransferOptions,
 ) (error) {
 	command := []string{
 		"eibc", "fulfill-order", orderId,
