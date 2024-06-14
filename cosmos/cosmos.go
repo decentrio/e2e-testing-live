@@ -3,20 +3,25 @@ package cosmos
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"encoding/hex"
 	"fmt"
 	"os/exec"
-	"time"
-	"encoding/json"
 	"strconv"
+	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 	chanTypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
+	"github.com/decentrio/rollup-e2e-testing/blockdb"
 	"github.com/decentrio/rollup-e2e-testing/ibc"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 	libclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 type CosmosChain struct {
@@ -54,7 +59,7 @@ func SendIBCTransfer(
 	toWallet ibc.WalletData,
 	fees string,
 	options ibc.TransferOptions,
-) (*types.TxResponse, error){
+) (*types.TxResponse, error) {
 	command := []string{
 		"ibc-transfer", "transfer", "transfer", channelID,
 		toWallet.Address, fmt.Sprintf("%s%s", toWallet.Amount.String(), toWallet.Denom),
@@ -259,4 +264,100 @@ func (c CosmosChain) Acknowledgements(ctx context.Context, interfaceRegistry cod
 		}
 	}
 	return ibcAcks, nil
+}
+
+func (c CosmosChain) FindTxs(ctx context.Context, height uint64, interfaceRegistry codectypes.InterfaceRegistry) ([]blockdb.Tx, error) {
+	h := int64(height)
+	var eg errgroup.Group
+	var blockRes *coretypes.ResultBlockResults
+	var block *coretypes.ResultBlock
+	eg.Go(func() (err error) {
+		blockRes, err = c.Client.BlockResults(ctx, &h)
+		return err
+	})
+	eg.Go(func() (err error) {
+		block, err = c.Client.Block(ctx, &h)
+		return err
+	})
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	txs := make([]blockdb.Tx, 0, len(block.Block.Txs)+2)
+	for i, tx := range block.Block.Txs {
+		var newTx blockdb.Tx
+		newTx.Data = []byte(fmt.Sprintf(`{"data":"%s"}`, hex.EncodeToString(tx)))
+
+		sdkTx, err := decodeTX(interfaceRegistry, tx)
+		if err != nil {
+			fmt.Println("Failed to decode tx", zap.Uint64("height", height), zap.Error(err))
+			continue
+		}
+		b, err := encodeTxToJSON(interfaceRegistry, sdkTx)
+		if err != nil {
+			fmt.Println("Failed to marshal tx to json", zap.Uint64("height", height), zap.Error(err))
+			continue
+		}
+		newTx.Data = b
+
+		rTx := blockRes.TxsResults[i]
+
+		newTx.Events = make([]blockdb.Event, len(rTx.Events))
+		for j, e := range rTx.Events {
+			attrs := make([]blockdb.EventAttribute, len(e.Attributes))
+			for k, attr := range e.Attributes {
+				attrs[k] = blockdb.EventAttribute{
+					Key:   string(attr.Key),
+					Value: string(attr.Value),
+				}
+			}
+			newTx.Events[j] = blockdb.Event{
+				Type:       e.Type,
+				Attributes: attrs,
+			}
+		}
+		txs = append(txs, newTx)
+	}
+	if len(blockRes.BeginBlockEvents) > 0 {
+		beginBlockTx := blockdb.Tx{
+			Data: []byte(`{"data":"begin_block","note":"this is a transaction artificially created for debugging purposes"}`),
+		}
+		beginBlockTx.Events = make([]blockdb.Event, len(blockRes.BeginBlockEvents))
+		for i, e := range blockRes.BeginBlockEvents {
+			attrs := make([]blockdb.EventAttribute, len(e.Attributes))
+			for j, attr := range e.Attributes {
+				attrs[j] = blockdb.EventAttribute{
+					Key:   string(attr.Key),
+					Value: string(attr.Value),
+				}
+			}
+			beginBlockTx.Events[i] = blockdb.Event{
+				Type:       e.Type,
+				Attributes: attrs,
+			}
+		}
+		txs = append(txs, beginBlockTx)
+	}
+	if len(blockRes.EndBlockEvents) > 0 {
+		endBlockTx := blockdb.Tx{
+			Data: []byte(`{"data":"end_block","note":"this is a transaction artificially created for debugging purposes"}`),
+		}
+		endBlockTx.Events = make([]blockdb.Event, len(blockRes.EndBlockEvents))
+		for i, e := range blockRes.EndBlockEvents {
+			attrs := make([]blockdb.EventAttribute, len(e.Attributes))
+			for j, attr := range e.Attributes {
+				attrs[j] = blockdb.EventAttribute{
+					Key:   string(attr.Key),
+					Value: string(attr.Value),
+				}
+			}
+			endBlockTx.Events[i] = blockdb.Event{
+				Type:       e.Type,
+				Attributes: attrs,
+			}
+		}
+		txs = append(txs, endBlockTx)
+	}
+
+	return txs, nil
 }
