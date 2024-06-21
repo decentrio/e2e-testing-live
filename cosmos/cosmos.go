@@ -238,3 +238,44 @@ func (c *CosmosChain) FinalizedRollappDymHeight(rollappName string) (uint64, err
 	}
 	return parsedHeight, nil
 }
+
+func (c *CosmosChain) WaitUntilRollappHeightIsFinalized(ctx context.Context, rollappChainID string, targetHeight uint64, timeoutSecs int) (bool, error) {
+	startTime := time.Now()
+	timeout := time.Duration(timeoutSecs) * time.Second
+
+	for {
+		select {
+		case <-ctx.Done():
+			return false, ctx.Err()
+		case <-time.After(timeout):
+			return false, fmt.Errorf("specified rollapp height %d not found within the timeout", targetHeight)
+		default:
+			rollappState, err := c.QueryRollappState(rollappChainID, true)
+			if err != nil {
+				if time.Since(startTime) < timeout {
+					time.Sleep(2 * time.Second)
+					continue
+				} else {
+					return false, fmt.Errorf("error querying rollapp state: %v", err)
+				}
+			}
+
+			for _, bd := range rollappState.StateInfo.BlockDescriptors.BD {
+				height, err := strconv.ParseUint(bd.Height, 10, 64)
+				fmt.Println("height:", height)
+				if err != nil {
+					continue
+				}
+				if height == targetHeight {
+					return true, nil
+				}
+			}
+
+			if time.Since(startTime)+2*time.Second < timeout {
+				time.Sleep(2 * time.Second)
+			} else {
+				return false, fmt.Errorf("specified rollapp height %d not found within the timeout", targetHeight)
+			}
+		}
+	}
+}
