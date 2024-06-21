@@ -122,16 +122,14 @@ func GetEvmAddressFromAnyFormatAddress(addrs ...string) (evmAddrs []common.Addre
 	return
 }
 
-func (user *User) GetERC20Balance(jsonrpc, erc20Contract string) (*big.Int, error) {
-	var height int64
+func (user *User) GetERC20Balance(jsonrpc, erc20Contract string, height int64) (*big.Int, error) {
+
 	contextHeight := big.NewInt(height)
 
 	evmAddrs, err := GetEvmAddressFromAnyFormatAddress(user.Address, erc20Contract)
 	fmt.Println(err)
 	accountAddr := evmAddrs[0]
 	contractAddr := evmAddrs[1]
-
-	fmt.Println("Account", accountAddr)
 
 	ethClient8545, err := ethclient.Dial(jsonrpc)
 	if err != nil {
