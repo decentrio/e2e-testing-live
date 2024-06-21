@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os/exec"
 
 	sdkmath "cosmossdk.io/math"
 	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -77,4 +78,25 @@ func (user *User) GetFaucet(api string) {
 
 	fmt.Println("Response Status:", resp.Status)
 	fmt.Println("Response Body:", string(body))
+}
+
+func (user *User) GetERC20Balance(jsonrpc, erc20Contract string) error {
+
+	command := []string{
+		"q", "balance", user.Address, erc20Contract, "--rpc", jsonrpc,
+	}
+
+	// Create the command
+	cmd := exec.Command("devd", command...)
+	fmt.Println(cmd)
+	// Run the command and get the output
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("Error executing command:", err)
+		return err
+	}
+
+	// Print the output
+	fmt.Println(string(output))
+	return err
 }
