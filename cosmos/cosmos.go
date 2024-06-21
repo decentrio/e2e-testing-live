@@ -19,6 +19,7 @@ import (
 
 type CosmosChain struct {
 	RPCAddr       string `json:"rpc_addr"`
+	JsonRPCAddr   string `json:"json_rpc_addr"`
 	GrpcAddr      string `json:"grpc_addr"`
 	ChainID       string `json:"chain_id"`
 	Bin           string `json:"bin"`
