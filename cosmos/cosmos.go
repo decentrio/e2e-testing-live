@@ -3,11 +3,14 @@ package cosmos
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/decentrio/rollup-e2e-testing/dymension"
 	"github.com/decentrio/rollup-e2e-testing/ibc"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
@@ -176,26 +179,62 @@ func (c *CosmosChain) KeyBech32(name string) (string, error) {
 	return string(bytes.TrimSuffix(output, []byte("\n"))), nil
 }
 
-func QueryRollappState(srcChain CosmosChain, rollappName string, onlyFinalized bool) (string, error) {
+func (c *CosmosChain) QueryRollappState(rollappName string, onlyFinalized bool) (*dymension.RollappState, error) {
 
 	command := []string{
-		"q", "rollapp", "state", rollappName, "--node", "https://" + srcChain.RPCAddr}
+		"q", "rollapp", "state", rollappName, "--node", "https://" + c.RPCAddr}
 
 	if onlyFinalized {
 		command = append(command, "--finalized")
 	}
 
 	// Create the command
-	cmd := exec.Command(srcChain.Bin, command...)
+	cmd := exec.Command(c.Bin, command...)
 	fmt.Println(cmd)
 	// Run the command and get the output
 	output, err := cmd.Output()
 	if err != nil {
 		fmt.Println("Error executing command:", err)
-		return "", err
+		return nil, err
 	}
 
 	// Print the output
 	fmt.Println(string(output))
-	return string(bytes.TrimSuffix(output, []byte("\n"))), nil
+	var rollappState dymension.RollappState
+	err = json.Unmarshal(output, &rollappState)
+	if err != nil {
+		return nil, err
+	}
+	return &rollappState, nil
+}
+
+func (c *CosmosChain) FinalizedRollappStateHeight(rollappName string) (uint64, error) {
+	rollappState, err := c.QueryRollappState(rollappName, true)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(rollappState.StateInfo.BlockDescriptors.BD) == 0 {
+		return 0, fmt.Errorf("no block descriptors found for rollapp %s", rollappName)
+	}
+
+	lastBD := rollappState.StateInfo.BlockDescriptors.BD[len(rollappState.StateInfo.BlockDescriptors.BD)-1]
+	parsedHeight, err := strconv.ParseUint(lastBD.Height, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return parsedHeight, nil
+}
+
+func (c *CosmosChain) FinalizedRollappDymHeight(rollappName string) (uint64, error) {
+	rollappState, err := c.QueryRollappState(rollappName, true)
+	if err != nil {
+		return 0, err
+	}
+
+	parsedHeight, err := strconv.ParseUint(rollappState.StateInfo.CreationHeight, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return parsedHeight, nil
 }
