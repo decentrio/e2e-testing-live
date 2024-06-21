@@ -183,7 +183,7 @@ func (c *CosmosChain) KeyBech32(name string) (string, error) {
 func (c *CosmosChain) QueryRollappState(rollappName string, onlyFinalized bool) (*dymension.RollappState, error) {
 
 	command := []string{
-		"q", "rollapp", "state", rollappName, "--node", "https://" + c.RPCAddr}
+		"q", "rollapp", "state", rollappName, "--node", "https://" + c.RPCAddr, "--output", "json"}
 
 	if onlyFinalized {
 		command = append(command, "--finalized")
