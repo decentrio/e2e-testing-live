@@ -175,3 +175,27 @@ func (c *CosmosChain) KeyBech32(name string) (string, error) {
 
 	return string(bytes.TrimSuffix(output, []byte("\n"))), nil
 }
+
+func QueryRollappState(srcChain CosmosChain, rollappName string, onlyFinalized bool) (string, error) {
+
+	command := []string{
+		"q", "rollapp", "state", rollappName, "--node", "https://" + srcChain.RPCAddr}
+
+	if onlyFinalized {
+		command = append(command, "--finalized")
+	}
+
+	// Create the command
+	cmd := exec.Command(srcChain.Bin, command...)
+	fmt.Println(cmd)
+	// Run the command and get the output
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("Error executing command:", err)
+		return "", err
+	}
+
+	// Print the output
+	fmt.Println(string(output))
+	return string(bytes.TrimSuffix(output, []byte("\n"))), nil
+}
