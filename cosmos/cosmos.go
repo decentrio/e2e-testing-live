@@ -254,7 +254,7 @@ func (c *CosmosChain) WaitUntilRollappHeightIsFinalized(ctx context.Context, rol
 			rollappState, err := c.QueryRollappState(rollappChainID, true)
 			if err != nil {
 				if time.Since(startTime) < timeout {
-					time.Sleep(2 * time.Second)
+					time.Sleep(10 * time.Second)
 					continue
 				} else {
 					return false, fmt.Errorf("error querying rollapp state: %v", err)
@@ -263,7 +263,6 @@ func (c *CosmosChain) WaitUntilRollappHeightIsFinalized(ctx context.Context, rol
 
 			for _, bd := range rollappState.StateInfo.BlockDescriptors.BD {
 				height, err := strconv.ParseUint(bd.Height, 10, 64)
-				fmt.Println("height:", height)
 				if err != nil {
 					continue
 				}
@@ -273,7 +272,7 @@ func (c *CosmosChain) WaitUntilRollappHeightIsFinalized(ctx context.Context, rol
 			}
 
 			if time.Since(startTime)+2*time.Second < timeout {
-				time.Sleep(2 * time.Second)
+				time.Sleep(10 * time.Second)
 			} else {
 				return false, fmt.Errorf("specified rollapp height %d not found within the timeout", targetHeight)
 			}
