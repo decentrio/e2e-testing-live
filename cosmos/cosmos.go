@@ -3,8 +3,8 @@ package cosmos
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strconv"
@@ -18,8 +18,8 @@ import (
 	"github.com/decentrio/rollup-e2e-testing/ibc"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	libclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	libclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
@@ -132,7 +132,7 @@ func FullfillDemandOrder(
 ) (*types.TxResponse, error) {
 	command := []string{
 		"eibc", "fulfill-order", orderId,
-		"--fees", fees, "--node", "https://" + dymHub.GrpcAddr,
+		"--fees", fees, "--node", "https://" + dymHub.RPCAddr,
 	}
 
 	command = append([]string{"tx"}, command...)
