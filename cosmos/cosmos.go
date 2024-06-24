@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 	chanTypes "github.com/cosmos/ibc-go/v6/modules/core/04-channel/types"
 	"github.com/decentrio/rollup-e2e-testing/blockdb"
+	"github.com/decentrio/rollup-e2e-testing/dymension"
 	"github.com/decentrio/rollup-e2e-testing/ibc"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
@@ -26,6 +27,7 @@ import (
 
 type CosmosChain struct {
 	RPCAddr       string `json:"rpc_addr"`
+	JsonRPCAddr   string `json:"json_rpc_addr"`
 	GrpcAddr      string `json:"grpc_addr"`
 	ChainID       string `json:"chain_id"`
 	Bin           string `json:"bin"`
@@ -403,4 +405,104 @@ func (c CosmosChain) FindTxs(ctx context.Context, height uint64, interfaceRegist
 	}
 
 	return txs, nil
+}
+
+func (c *CosmosChain) QueryRollappState(rollappName string, onlyFinalized bool) (*dymension.RollappState, error) {
+
+	command := []string{
+		"q", "rollapp", "state", rollappName, "--node", "https://" + c.RPCAddr, "--output", "json"}
+
+	if onlyFinalized {
+		command = append(command, "--finalized")
+	}
+
+	// Create the command
+	cmd := exec.Command(c.Bin, command...)
+	fmt.Println(cmd)
+	// Run the command and get the output
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("Error executing command:", err)
+		return nil, err
+	}
+
+	// Print the output
+	fmt.Println(string(output))
+	var rollappState dymension.RollappState
+	err = json.Unmarshal(output, &rollappState)
+	if err != nil {
+		return nil, err
+	}
+	return &rollappState, nil
+}
+
+func (c *CosmosChain) FinalizedRollappStateHeight(rollappName string) (uint64, error) {
+	rollappState, err := c.QueryRollappState(rollappName, true)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(rollappState.StateInfo.BlockDescriptors.BD) == 0 {
+		return 0, fmt.Errorf("no block descriptors found for rollapp %s", rollappName)
+	}
+
+	lastBD := rollappState.StateInfo.BlockDescriptors.BD[len(rollappState.StateInfo.BlockDescriptors.BD)-1]
+	parsedHeight, err := strconv.ParseUint(lastBD.Height, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return parsedHeight, nil
+}
+
+func (c *CosmosChain) FinalizedRollappDymHeight(rollappName string) (uint64, error) {
+	rollappState, err := c.QueryRollappState(rollappName, true)
+	if err != nil {
+		return 0, err
+	}
+
+	parsedHeight, err := strconv.ParseUint(rollappState.StateInfo.CreationHeight, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return parsedHeight, nil
+}
+
+func (c *CosmosChain) WaitUntilRollappHeightIsFinalized(ctx context.Context, rollappChainID string, targetHeight uint64, timeoutSecs int) (bool, error) {
+	startTime := time.Now()
+	timeout := time.Duration(timeoutSecs) * time.Second
+
+	for {
+		select {
+		case <-ctx.Done():
+			return false, ctx.Err()
+		case <-time.After(timeout):
+			return false, fmt.Errorf("specified rollapp height %d not found within the timeout", targetHeight)
+		default:
+			rollappState, err := c.QueryRollappState(rollappChainID, true)
+			if err != nil {
+				if time.Since(startTime) < timeout {
+					time.Sleep(10 * time.Second)
+					continue
+				} else {
+					return false, fmt.Errorf("error querying rollapp state: %v", err)
+				}
+			}
+
+			for _, bd := range rollappState.StateInfo.BlockDescriptors.BD {
+				height, err := strconv.ParseUint(bd.Height, 10, 64)
+				if err != nil {
+					continue
+				}
+				if height == targetHeight {
+					return true, nil
+				}
+			}
+
+			if time.Since(startTime)+2*time.Second < timeout {
+				time.Sleep(10 * time.Second)
+			} else {
+				return false, fmt.Errorf("specified rollapp height %d not found within the timeout", targetHeight)
+			}
+		}
+	}
 }
