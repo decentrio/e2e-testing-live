@@ -131,7 +131,7 @@ func FullfillDemandOrder(
 	orderId string,
 	keyName string,
 	fees string,
-) (*types.TxResponse, error) {
+) ([]byte, error) {
 	command := []string{
 		"eibc", "fulfill-order", orderId,
 		"--fees", fees, "--node", "https://" + dymHub.RPCAddr,
@@ -159,13 +159,7 @@ func FullfillDemandOrder(
 		return nil, err
 	}
 
-	txResponse := types.TxResponse{}
-	err = json.Unmarshal(output, &txResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	return &txResponse, nil
+	return output, nil
 }
 
 func GetIbcTxFromTxResponse(txResp types.TxResponse) (tx ibc.Tx, _ error) {
