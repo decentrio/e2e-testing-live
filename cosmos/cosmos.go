@@ -61,7 +61,7 @@ func SendIBCTransfer(
 	toWallet ibc.WalletData,
 	fees string,
 	options ibc.TransferOptions,
-) (*types.TxResponse, error) {
+) (*TxResponse, error) {
 	command := []string{
 		"ibc-transfer", "transfer", "transfer", channelID,
 		toWallet.Address, fmt.Sprintf("%s%s", toWallet.Amount.String(), toWallet.Denom),
@@ -116,7 +116,7 @@ func SendIBCTransfer(
 		return nil, err
 	}
 
-	txResponse := types.TxResponse{}
+	txResponse := TxResponse{}
 	err = json.Unmarshal(output, &txResponse)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func FullfillDemandOrder(
 	orderId string,
 	keyName string,
 	fees string,
-) ([]byte, error) {
+) (*TxResponse, error) {
 	command := []string{
 		"eibc", "fulfill-order", orderId,
 		"--fees", fees, "--node", "https://" + dymHub.RPCAddr,
@@ -159,14 +159,28 @@ func FullfillDemandOrder(
 		return nil, err
 	}
 
-	return output, nil
+	txResponse := TxResponse{}
+	err = json.Unmarshal(output, &txResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &txResponse, nil
 }
 
-func GetIbcTxFromTxResponse(txResp types.TxResponse) (tx ibc.Tx, _ error) {
-	tx.Height = uint64(txResp.Height)
+func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
+	height, err := strconv.ParseUint(txResp.Height, 10, 64)
+	if err != nil {
+		return tx, err
+	}
+	tx.Height = height
 	tx.TxHash = txResp.TxHash
 	// In cosmos, user is charged for entire gas requested, not the actual gas used.
-	tx.GasSpent = txResp.GasWanted
+	gasWanted, err := strconv.ParseInt(txResp.GasWanted, 10, 64)
+	if err != nil {
+		return tx, err
+	}
+	tx.GasSpent = gasWanted
 
 	const evType = "send_packet"
 	events := txResp.Events
