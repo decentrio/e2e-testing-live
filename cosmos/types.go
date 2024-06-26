@@ -25,7 +25,7 @@ type TxResponse struct {
 	// Additional information. May be non-deterministic.
 	Info string `protobuf:"bytes,8,opt,name=info,proto3" json:"info,omitempty"`
 	// Amount of gas requested for transaction.
-	GasWanted int64 `protobuf:"varint,9,opt,name=gas_wanted,json=gasWanted,proto3" json:"gas_wanted,omitempty"`
+	GasWanted string `protobuf:"varint,9,opt,name=gas_wanted,json=gasWanted,proto3" json:"gas_wanted,omitempty"`
 	// Amount of gas consumed by transaction.
 	GasUsed int64 `protobuf:"varint,10,opt,name=gas_used,json=gasUsed,proto3" json:"gas_used,omitempty"`
 	// The request transaction bytes.

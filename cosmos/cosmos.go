@@ -176,7 +176,11 @@ func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
 	tx.Height = height
 	tx.TxHash = txResp.TxHash
 	// In cosmos, user is charged for entire gas requested, not the actual gas used.
-	tx.GasSpent = txResp.GasWanted
+	gasWanted, err := strconv.ParseInt(txResp.GasWanted, 10, 64)
+	if err != nil {
+		return tx, err
+	}
+	tx.GasSpent = gasWanted
 
 	const evType = "send_packet"
 	events := txResp.Events
