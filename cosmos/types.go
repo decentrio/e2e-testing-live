@@ -8,7 +8,7 @@ import (
 
 type TxResponse struct {
 	// The block height
-	Height int64 `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
+	Height string `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
 	// The transaction hash.
 	TxHash string `protobuf:"bytes,2,opt,name=txhash,proto3" json:"txhash,omitempty"`
 	// Namespace for the Code
