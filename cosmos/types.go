@@ -27,7 +27,7 @@ type TxResponse struct {
 	// Amount of gas requested for transaction.
 	GasWanted string `protobuf:"varint,9,opt,name=gas_wanted,json=gasWanted,proto3" json:"gas_wanted,omitempty"`
 	// Amount of gas consumed by transaction.
-	GasUsed int64 `protobuf:"varint,10,opt,name=gas_used,json=gasUsed,proto3" json:"gas_used,omitempty"`
+	GasUsed string `protobuf:"varint,10,opt,name=gas_used,json=gasUsed,proto3" json:"gas_used,omitempty"`
 	// The request transaction bytes.
 	Tx *types.Any `protobuf:"bytes,11,opt,name=tx,proto3" json:"tx,omitempty"`
 	// Time of the previous block. For heights > 1, it's the weighted median of
