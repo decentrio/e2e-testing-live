@@ -169,7 +169,11 @@ func FullfillDemandOrder(
 }
 
 func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
-	tx.Height = uint64(txResp.Height)
+	height, err := strconv.ParseUint(txResp.Height, 10, 64)
+	if err != nil {
+		return tx, err
+	}
+	tx.Height = height
 	tx.TxHash = txResp.TxHash
 	// In cosmos, user is charged for entire gas requested, not the actual gas used.
 	tx.GasSpent = txResp.GasWanted
