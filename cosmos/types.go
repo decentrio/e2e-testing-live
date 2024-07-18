@@ -1,9 +1,9 @@
 package cosmos
 
 import (
-	types1 "github.com/tendermint/tendermint/abci/types"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	types1 "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/codec/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 )
 
 type TxResponse struct {
