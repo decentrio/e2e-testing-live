@@ -30,7 +30,7 @@ type User struct {
 // GetBalance fetches the current balance for a specific account address and denom.
 func (user *User) GetBalance(ctx context.Context, denom, grpcAddr string) (sdkmath.Int, error) {
 	params := &bankTypes.QueryBalanceRequest{Address: user.Address, Denom: denom}
-	conn, err := grpc.Dial(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return sdkmath.Int{}, err
 	}

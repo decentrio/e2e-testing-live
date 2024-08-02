@@ -157,7 +157,7 @@ func BuildEIbcMemo(eibcFee math.Int) string {
 }
 func GetERC20Balance(ctx context.Context, denom, grpcAddr string) (sdkmath.Int, error) {
 	params := &bankTypes.QueryBalanceRequest{Address: erc20Addr, Denom: denom}
-	conn, err := grpc.Dial(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return sdkmath.Int{}, err
 	}
