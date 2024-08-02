@@ -169,7 +169,7 @@ func FullfillDemandOrder(
 }
 
 func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
-	height, err := strconv.ParseUint(txResp.Height, 10, 64)
+	height, err := strconv.ParseInt(txResp.Height, 10, 64)
 	if err != nil {
 		return tx, err
 	}
