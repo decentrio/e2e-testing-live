@@ -103,7 +103,7 @@ func SendIBCTransfer(
 		"--from", keyName,
 		"--keyring-backend", keyring.BackendTest,
 		"--output", "json",
-		"--broadcast-mode", "block",
+		"--broadcast-mode", "async",
 		"-y")
 
 	// Create the command
@@ -146,7 +146,7 @@ func FullfillDemandOrder(
 		"--from", keyName,
 		"--keyring-backend", keyring.BackendTest,
 		"--output", "json",
-		"--broadcast-mode", "block",
+		"--broadcast-mode", "async",
 		"-y")
 
 	// Create the command
