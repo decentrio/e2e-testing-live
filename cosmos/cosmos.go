@@ -262,8 +262,8 @@ func GetTxResponse(
 	if err != nil {
 		return nil, err
 	}
-	for _, event := range tx.Events {
-		println("check event:", event.String())
+	for _, log := range tx.Logs {
+		println("check log event:", log.String())
 	}
 
 	return &tx, nil
