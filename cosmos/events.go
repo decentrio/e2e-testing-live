@@ -10,6 +10,8 @@ import (
 func AttributeValue(events []abcitypes.Event, eventType, attrKey string) (string, bool) {
 	for _, event := range events {
 		if event.Type != eventType {
+			println("check event.Type: ", event.Type)
+			println("check eventType: ", eventType)
 			continue
 		}
 		println("check attrKey: ", attrKey)
