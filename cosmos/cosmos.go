@@ -116,6 +116,7 @@ func SendIBCTransfer(
 		return nil, err
 	}
 
+	println("check output:", string(output))
 	txResponse := TxResponse{}
 	err = json.Unmarshal(output, &txResponse)
 	if err != nil {
