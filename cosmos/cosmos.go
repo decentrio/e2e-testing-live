@@ -23,6 +23,7 @@ import (
 	"github.com/decentrio/rollup-e2e-testing/ibc"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	abcitypes "github.com/cometbft/cometbft/abci/types"
 )
 
 type CosmosChain struct {
@@ -116,13 +117,12 @@ func SendIBCTransfer(
 		return nil, err
 	}
 
-	println("check output:", string(output))
 	txResponse := TxResponse{}
 	err = json.Unmarshal(output, &txResponse)
 	if err != nil {
 		return nil, err
 	}
-	println("check event txresponse:", len(txResponse.Events))
+
 	return &txResponse, nil
 }
 
@@ -169,7 +169,7 @@ func FullfillDemandOrder(
 	return &txResponse, nil
 }
 
-func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
+func GetIbcTxFromTxResponse(chain CosmosChain, txResp TxResponse) (tx ibc.Tx, _ error) {
 	height, err := strconv.ParseInt(txResp.Height, 10, 64)
 	if err != nil {
 		return tx, err
@@ -183,8 +183,15 @@ func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
 	}
 	tx.GasSpent = gasWanted
 
+	events, err := GetTxEvents(chain, tx.TxHash)
+	if err != nil {
+		return tx, err
+	}
+	println("check len events: ", len(events))
+	for _, event := range events {
+		println("check event: ", event.String())
+	}
 	const evType = "send_packet"
-	events := txResp.Events
 
 	var (
 		seq, _           = AttributeValue(events, evType, "packet_sequence")
@@ -196,18 +203,13 @@ func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
 		timeoutTs, _     = AttributeValue(events, evType, "packet_timeout_timestamp")
 		data, _          = AttributeValue(events, evType, "packet_data")
 	)
-	println("check len events: ", len(events))
-	for _, event := range events {
-		println("check event: ", event.String())
-	}
+
 	tx.Packet.SourcePort = srcPort
 	tx.Packet.SourceChannel = srcChan
 	tx.Packet.DestPort = dstPort
 	tx.Packet.DestChannel = dstChan
 	tx.Packet.TimeoutHeight = timeoutHeight
 	tx.Packet.Data = []byte(data)
-
-	println("check seq: ", seq)
 
 	seqNum, err := strconv.Atoi(seq)
 	if err != nil {
@@ -231,6 +233,43 @@ func (c CosmosChain) Height(ctx context.Context) (uint64, error) {
 	}
 	height := res.SyncInfo.LatestBlockHeight
 	return uint64(height), nil
+}
+
+func GetTxEvents(
+	chain CosmosChain,
+	txHash string,
+
+) ([]abcitypes.Event, error) {
+	command := []string{
+		"tx", "hash", txHash, "--node", "https://" + chain.RPCAddr,
+	}
+
+	command = append(command,
+		"--chain-id", chain.ChainID,
+		"--gas", "auto",
+		"--gas-adjustment", "1.5",
+		"--keyring-backend", keyring.BackendTest,
+		"--output", "json",
+		"--broadcast-mode", "async",
+		"-y")
+	
+	// Create the command
+	cmd := exec.Command(chain.Bin, command...)
+	fmt.Println(cmd)
+
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("Error executing command:", err)
+		return nil, err
+	}
+
+	events := []abcitypes.Event{}
+	err = json.Unmarshal(output, &events)
+	if err != nil {
+		return nil, err
+	}
+
+	return events, nil
 }
 
 func (c *CosmosChain) CreateUser(keyName string) (User, error) {
