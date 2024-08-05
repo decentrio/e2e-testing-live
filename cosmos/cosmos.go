@@ -241,7 +241,7 @@ func GetTxEvents(
 
 ) ([]abcitypes.Event, error) {
 	command := []string{
-		"tx", "hash", txHash, "--node", "https://" + chain.RPCAddr,
+		"q", "tx", "hash", txHash, "--node", "https://" + chain.RPCAddr,
 	}
 
 	command = append(command,
