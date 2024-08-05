@@ -191,9 +191,6 @@ func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
 	events := txResp.Events
 
 	println("check len events:", len(events))
-	for _, event := range events {
-		println("check event:", event.String())
-	}
 
 	var (
 		seq, _           = AttributeValue(events, evType, "packet_sequence")
