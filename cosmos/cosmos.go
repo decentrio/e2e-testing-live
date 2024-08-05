@@ -123,7 +123,11 @@ func SendIBCTransfer(
 	}
 
 	result, err := GetTxResponse(srcChain, txResponse.TxHash)
+	if err != nil {
+		return nil, err
+	}
 
+	println("check len events:", len(result.Events))
 	return result, nil
 }
 
@@ -254,7 +258,7 @@ func GetTxResponse(
 	}
 
 	tx := TxResponse{}
-	println("check output:", string(output))
+
 	err = json.Unmarshal(output, &tx)
 	if err != nil {
 		return nil, err
