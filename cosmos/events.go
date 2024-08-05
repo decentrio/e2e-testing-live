@@ -15,6 +15,7 @@ func AttributeValue(events []abcitypes.Event, eventType, attrKey string) (string
 		}
 		for _, attr := range event.Attributes {
 			key, _ := base64.StdEncoding.DecodeString(attr.Key)
+			println("check key: ", string(key))
 			if string(key) == attrKey {
 				value, _ := base64.StdEncoding.DecodeString(attr.Value)
 				return string(value), true
