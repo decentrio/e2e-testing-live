@@ -202,6 +202,8 @@ func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
 	tx.Packet.TimeoutHeight = timeoutHeight
 	tx.Packet.Data = []byte(data)
 
+	println("check seq: ", seq)
+
 	seqNum, err := strconv.Atoi(seq)
 	if err != nil {
 		return tx, fmt.Errorf("invalid packet sequence from events %s: %w", seq, err)
