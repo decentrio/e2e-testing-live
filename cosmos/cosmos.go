@@ -126,10 +126,7 @@ func SendIBCTransfer(
 	if err != nil {
 		return nil, err
 	}
-	println("check len events:", len(result.Events))
-	for _, event := range result.Events {
-		println("check event:", event.String())
-	}
+
 	return result, nil
 }
 
@@ -260,10 +257,13 @@ func GetTxResponse(
 	}
 
 	tx := TxResponse{}
-	println("check output:", string(output))
+
 	err = json.Unmarshal(output, &tx)
 	if err != nil {
 		return nil, err
+	}
+	for _, event := range tx.Events {
+		println("check event:", event.String())
 	}
 
 	return &tx, nil
