@@ -127,7 +127,6 @@ func SendIBCTransfer(
 		return nil, err
 	}
 
-	println("check len events:", len(result.Events))
 	return result, nil
 }
 
@@ -190,6 +189,11 @@ func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
 
 	const evType = "send_packet"
 	events := txResp.Events
+
+	println("check len events:", len(events))
+	for _, event := range events {
+		println("check event:", event.String())
+	}
 
 	var (
 		seq, _           = AttributeValue(events, evType, "packet_sequence")
