@@ -121,7 +121,7 @@ func SendIBCTransfer(
 	if err != nil {
 		return nil, err
 	}
-
+	println("check event txresponse:", len(txResponse.Events))
 	return &txResponse, nil
 }
 
