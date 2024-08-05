@@ -1,6 +1,7 @@
 package cosmos
 
 import (
+	"encoding/base64"
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 )
 
@@ -12,24 +13,13 @@ func AttributeValue(events []abcitypes.Event, eventType, attrKey string) (string
 		if event.Type != eventType {
 			continue
 		}
-		if isEventNeed := CheckEvent(event, attrKey); !isEventNeed {
-			continue
-		}
 		for _, attr := range event.Attributes {
-			if string(attr.Key) == attrKey {
-				return string(attr.Value), true
+			key, _ := base64.StdEncoding.DecodeString(attr.Key)
+			if string(key) == attrKey {
+				value, _ := base64.StdEncoding.DecodeString(attr.Value)
+				return string(value), true
 			}
 		}
 	}
 	return "", false
-}
-
-func CheckEvent(event abcitypes.Event, attrKey string) bool {
-	for _, attr := range event.Attributes {
-		if attr.Key == attrKey {
-			return true
-		}
-	}
-
-	return false
 }
