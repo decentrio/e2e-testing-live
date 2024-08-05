@@ -12,8 +12,11 @@ func AttributeValue(events []abcitypes.Event, eventType, attrKey string) (string
 		if event.Type != eventType {
 			continue
 		}
+		println("check attrKey: ", attrKey)
 		for _, attr := range event.Attributes {
+			println("check attrKey: ", attr.Key)
 			if string(attr.Key) == attrKey {
+				println("check result: ", string(attr.Value))
 				return string(attr.Value), true
 			}
 		}
