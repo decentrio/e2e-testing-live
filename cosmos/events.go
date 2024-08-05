@@ -12,15 +12,24 @@ func AttributeValue(events []abcitypes.Event, eventType, attrKey string) (string
 		if event.Type != eventType {
 			continue
 		}
-		println("check event: ", event.String())
+		if isEventNeed := CheckEvent(event, attrKey); !isEventNeed {
+			continue
+		}
 		for _, attr := range event.Attributes {
-			println("check attrKey: ", attrKey)
-			println("check Key: ", attr.Key)
-			println("check value: ", attr.Value)
 			if string(attr.Key) == attrKey {
 				return string(attr.Value), true
 			}
 		}
 	}
 	return "", false
+}
+
+func CheckEvent(event abcitypes.Event, attrKey string) bool {
+	for _, attr := range event.Attributes {
+		if attr.Key == attrKey {
+			return true
+		}
+	}
+
+	return false
 }
