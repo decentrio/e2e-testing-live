@@ -195,6 +195,7 @@ func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
 		timeoutTs, _     = AttributeValue(events, evType, "packet_timeout_timestamp")
 		data, _          = AttributeValue(events, evType, "packet_data")
 	)
+	println("check len events: ", len(events))
 	for _, event := range events {
 		println("check event: ", event.String())
 	}
