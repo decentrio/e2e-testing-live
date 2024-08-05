@@ -23,7 +23,6 @@ import (
 	"github.com/decentrio/rollup-e2e-testing/ibc"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	abcitypes "github.com/cometbft/cometbft/abci/types"
 )
 
 type CosmosChain struct {
@@ -123,7 +122,9 @@ func SendIBCTransfer(
 		return nil, err
 	}
 
-	return &txResponse, nil
+	result, err := GetTxResponse(srcChain, txResponse.TxHash)
+
+	return result, nil
 }
 
 // TODO: refactor this to dym_hub
@@ -169,7 +170,7 @@ func FullfillDemandOrder(
 	return &txResponse, nil
 }
 
-func GetIbcTxFromTxResponse(chain CosmosChain, txResp TxResponse) (tx ibc.Tx, _ error) {
+func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
 	height, err := strconv.ParseInt(txResp.Height, 10, 64)
 	if err != nil {
 		return tx, err
@@ -183,15 +184,8 @@ func GetIbcTxFromTxResponse(chain CosmosChain, txResp TxResponse) (tx ibc.Tx, _ 
 	}
 	tx.GasSpent = gasWanted
 
-	events, err := GetTxEvents(chain, tx.TxHash)
-	if err != nil {
-		return tx, err
-	}
-	println("check len events: ", len(events))
-	for _, event := range events {
-		println("check event: ", event.String())
-	}
 	const evType = "send_packet"
+	events := txResp.Events
 
 	var (
 		seq, _           = AttributeValue(events, evType, "packet_sequence")
@@ -235,11 +229,11 @@ func (c CosmosChain) Height(ctx context.Context) (uint64, error) {
 	return uint64(height), nil
 }
 
-func GetTxEvents(
+func GetTxResponse(
 	chain CosmosChain,
 	txHash string,
 
-) ([]abcitypes.Event, error) {
+) (*TxResponse, error) {
 	command := []string{
 		"q", "tx", txHash, "--node", "https://" + chain.RPCAddr,
 	}
@@ -259,13 +253,14 @@ func GetTxEvents(
 		return nil, err
 	}
 
-	events := []abcitypes.Event{}
-	err = json.Unmarshal(output, &events)
+	tx := TxResponse{}
+	println("check output:", string(output))
+	err = json.Unmarshal(output, &tx)
 	if err != nil {
 		return nil, err
 	}
 
-	return events, nil
+	return &tx, nil
 }
 
 func (c *CosmosChain) CreateUser(keyName string) (User, error) {
