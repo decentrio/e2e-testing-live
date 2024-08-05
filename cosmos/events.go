@@ -9,11 +9,13 @@ import (
 // If not found, returns empty string and false.
 func AttributeValue(events []abcitypes.Event, eventType, attrKey string) (string, bool) {
 	for _, event := range events {
-		println("check here dcm: ", event.String())
 		if event.Type != eventType {
 			continue
 		}
+		println("check event type: ", eventType)
 		for _, attr := range event.Attributes {
+			println("check attrKey: ", attrKey)
+			println("check value: ", attr.Value)
 			if string(attr.Key) == attrKey {
 				return string(attr.Value), true
 			}
