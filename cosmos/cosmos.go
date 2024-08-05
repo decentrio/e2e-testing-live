@@ -122,7 +122,12 @@ func SendIBCTransfer(
 		return nil, err
 	}
 
-	return &txResponse, nil
+	result, err := GetTxResponse(srcChain, txResponse.TxHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // TODO: refactor this to dym_hub
@@ -195,6 +200,7 @@ func GetIbcTxFromTxResponse(txResp TxResponse) (tx ibc.Tx, _ error) {
 		timeoutTs, _     = AttributeValue(events, evType, "packet_timeout_timestamp")
 		data, _          = AttributeValue(events, evType, "packet_data")
 	)
+
 	tx.Packet.SourcePort = srcPort
 	tx.Packet.SourceChannel = srcChan
 	tx.Packet.DestPort = dstPort
@@ -224,6 +230,40 @@ func (c CosmosChain) Height(ctx context.Context) (uint64, error) {
 	}
 	height := res.SyncInfo.LatestBlockHeight
 	return uint64(height), nil
+}
+
+func GetTxResponse(
+	chain CosmosChain,
+	txHash string,
+
+) (*TxResponse, error) {
+	command := []string{
+		"q", "tx", txHash, "--node", "https://" + chain.RPCAddr,
+	}
+
+	command = append(command,
+		"--chain-id", chain.ChainID,
+		"--output", "json",
+	)
+	
+	// Create the command
+	cmd := exec.Command(chain.Bin, command...)
+	fmt.Println(cmd)
+
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("Error executing command:", err)
+		return nil, err
+	}
+
+	tx := TxResponse{}
+
+	err = json.Unmarshal(output, &tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tx, nil
 }
 
 func (c *CosmosChain) CreateUser(keyName string) (User, error) {
