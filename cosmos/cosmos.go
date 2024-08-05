@@ -241,17 +241,13 @@ func GetTxEvents(
 
 ) ([]abcitypes.Event, error) {
 	command := []string{
-		"q", "tx", "hash", txHash, "--node", "https://" + chain.RPCAddr,
+		"q", "tx", txHash, "--node", "https://" + chain.RPCAddr,
 	}
 
 	command = append(command,
 		"--chain-id", chain.ChainID,
-		"--gas", "auto",
-		"--gas-adjustment", "1.5",
-		"--keyring-backend", keyring.BackendTest,
 		"--output", "json",
-		"--broadcast-mode", "async",
-		"-y")
+	)
 	
 	// Create the command
 	cmd := exec.Command(chain.Bin, command...)
