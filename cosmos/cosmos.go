@@ -265,7 +265,7 @@ func GetTxResponse(
 	}
 
 	tx := TxResponse{}
-
+	println("check output:", string(output))
 	err = json.Unmarshal(output, &tx)
 	if err != nil {
 		return nil, err
